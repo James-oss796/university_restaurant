@@ -1,7 +1,13 @@
 <!-- Member C (Orders & Queue Management) should implement this file -->
 
-<%@ page import="java.util.List, model.MenuItem, model.dao.MenuItemDAO" %>
+<%@ page import="java.util.List, model.MenuItem, model.User, model.dao.MenuItemDAO" %>
 <%
+    User user = (User) session.getAttribute("user");
+    if (user == null || !"student".equals(user.getRole())) {
+        response.sendRedirect("LoginServlet");
+        return;
+    }
+
     MenuItemDAO dao = new MenuItemDAO();
     List<MenuItem> items = dao.getAllMenuItems();
 %>

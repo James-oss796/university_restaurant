@@ -1,6 +1,14 @@
 <!-- Member D (Payments & Notifications) should implement this file -->
 
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page import="model.User" %>
+<%
+    User user = (User) session.getAttribute("user");
+    if (user == null || !"cashier".equals(user.getRole())) {
+        response.sendRedirect("LoginServlet");
+        return;
+    }
+%>
 <html>
 <head>
     <title>Payment</title>

@@ -1,68 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-Click nbfs://nbhost/SystemFileSystem/Templates/XML/XMLDocument.xml to edit this template
--->
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
 
+    <display-name>UniversityRestaurant</display-name>
 
+    <welcome-file-list>
+        <welcome-file>LoginServlet</welcome-file>
+    </welcome-file-list>
 
-<root>
-    
-    <!-- Member B (Authentication & User Management) should configure this -->
-<servlet>
-    <servlet-name>LoginServlet</servlet-name>
-    <servlet-class>controller.LoginServlet</servlet-class>
-</servlet>
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>controller.LoginServlet</servlet-class>
+    </servlet>
 
-<servlet-mapping>
-    <servlet-name>LoginServlet</servlet-name>
-    <url-pattern>/LoginServlet</url-pattern>
-</servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/LoginServlet</url-pattern>
+    </servlet-mapping>
 
-<servlet>
-    <servlet-name>OrderServlet</servlet-name>
-    <servlet-class>controller.OrderServlet</servlet-class>
-</servlet>
+    <servlet>
+        <servlet-name>RegisterServlet</servlet-name>
+        <servlet-class>controller.RegisterServlet</servlet-class>
+    </servlet>
 
-<servlet-mapping>
-    <servlet-name>OrderServlet</servlet-name>
-    <url-pattern>/OrderServlet</url-pattern>
-</servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>RegisterServlet</servlet-name>
+        <url-pattern>/RegisterServlet</url-pattern>
+    </servlet-mapping>
 
-<servlet>
-    <servlet-name>RegisterServlet</servlet-name>
-    <servlet-class>controller.RegisterServlet</servlet-class>
-</servlet>
+    <servlet>
+        <servlet-name>LogoutServlet</servlet-name>
+        <servlet-class>controller.LogoutServlet</servlet-class>
+    </servlet>
 
-<servlet-mapping>
-    <servlet-name>RegisterServlet</servlet-name>
-    <url-pattern>/RegisterServlet</url-pattern>
-</servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LogoutServlet</servlet-name>
+        <url-pattern>/LogoutServlet</url-pattern>
+    </servlet-mapping>
 
-<servlet>
-    <servlet-name>QueueServlet</servlet-name>
-    <servlet-class>controller.QueueServlet</servlet-class>
-</servlet>
+    <servlet>
+        <servlet-name>OrderServlet</servlet-name>
+        <servlet-class>controller.OrderServlet</servlet-class>
+    </servlet>
 
-<servlet-mapping>
-    <servlet-name>QueueServlet</servlet-name>
-    <url-pattern>/QueueServlet</url-pattern>
-</servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>OrderServlet</servlet-name>
+        <url-pattern>/OrderServlet</url-pattern>
+    </servlet-mapping>
 
-<servlet>
-    <servlet-name>PaymentServlet</servlet-name>
-    <servlet-class>controller.PaymentServlet</servlet-class>
-</servlet>
+    <servlet>
+        <servlet-name>QueueServlet</servlet-name>
+        <servlet-class>controller.QueueServlet</servlet-class>
+    </servlet>
 
-<servlet-mapping>
-    <servlet-name>PaymentServlet</servlet-name>
-    <url-pattern>/PaymentServlet</url-pattern>
-</servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>QueueServlet</servlet-name>
+        <url-pattern>/QueueServlet</url-pattern>
+    </servlet-mapping>
 
+    <servlet>
+        <servlet-name>PaymentServlet</servlet-name>
+        <servlet-class>controller.PaymentServlet</servlet-class>
+    </servlet>
 
+    <servlet-mapping>
+        <servlet-name>PaymentServlet</servlet-name>
+        <url-pattern>/PaymentServlet</url-pattern>
+    </servlet-mapping>
 
+    <servlet>
+        <servlet-name>ReportServlet</servlet-name>
+        <servlet-class>controller.ReportServlet</servlet-class>
+    </servlet>
 
-
-    
-</root>
-
+    <servlet-mapping>
+        <servlet-name>ReportServlet</servlet-name>
+        <url-pattern>/ReportServlet</url-pattern>
+    </servlet-mapping>
+</web-app>

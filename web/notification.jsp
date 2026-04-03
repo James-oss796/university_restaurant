@@ -1,8 +1,13 @@
 <!-- Member D (Payments & Notifications) should implement this file -->
 
-<%@ page import="java.util.List, model.Notification, model.dao.NotificationDAO, model.User" %>
+<%@ page import="java.util.List, model.Notification, model.User, model.dao.NotificationDAO" %>
 <%
     User user = (User) session.getAttribute("user");
+    if (user == null || !"student".equals(user.getRole())) {
+        response.sendRedirect("LoginServlet");
+        return;
+    }
+
     NotificationDAO dao = new NotificationDAO();
     List<Notification> notifications = dao.getNotificationsByUser(user.getUserId());
 %>

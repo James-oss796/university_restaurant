@@ -1,10 +1,12 @@
-<%-- 
-    Document   : report
-    Created on : Apr 1, 2026, 6:17:25 AM
-    Author     : Admin
---%>
-
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html" pageEncoding="UTF-8" %>
+<%@ page import="model.User" %>
+<%
+    User user = (User) session.getAttribute("user");
+    if (user == null || !"admin".equals(user.getRole())) {
+        response.sendRedirect("LoginServlet");
+        return;
+    }
+%>
 <!DOCTYPE html>
 <html>
     <head>
