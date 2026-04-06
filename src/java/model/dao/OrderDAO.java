@@ -45,3 +45,22 @@ public class OrderDAO {
         return list;
     }
 }
+
+public int getCustomerIdByOrder(int orderId) {
+        String sql = "SELECT customer_id FROM orders WHERE order_id = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+ 
+            ps.setInt(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("customer_id");
+                }
+            }
+ 
+        } catch (SQLException e) {
+            System.err.println("[OrderDAO.getCustomerIdByOrder] Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return -1;
+    }
