@@ -1,7 +1,3 @@
-// Member D (Payments & Notifications) - PaymentDAO.java
-// Data Access Object for the `payments` table.
-// All DB interaction for payments is handled here — NO SQL in Servlets or JSPs.
-
 package model.dao;
 
 import model.Payment;
@@ -145,11 +141,33 @@ public class PaymentDAO {
         return payments;
     }
 
-    // 4. READ — payments for a specific date (used by Member E for reports)
+    public List<Payment> getRecentPayments(int limit) {
+        List<Payment> payments = new ArrayList<>();
+        String sql = "SELECT p.*, u.name AS cashier_name "
+                   + "FROM payments p "
+                   + "LEFT JOIN users u ON p.cashier_id = u.user_id "
+                   + "ORDER BY p.payment_date DESC, p.payment_time DESC "
+                   + "LIMIT " + sanitizeLimit(limit);
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                payments.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("[PaymentDAO.getRecentPayments] Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return payments;
+    }
+
+    // 4. READ — payments for a specific date (used by reports)
 
     /**
      * Returns all payments recorded on a given date.
-     * Intended to be used by Member E's DailyReportDAO for aggregation.
+     * Intended to be used by the reports flow for aggregation.
      *
      * @param date  The date to filter on (java.sql.Date).
      * @return  List of Payment objects (may be empty, never null).
@@ -207,6 +225,32 @@ public class PaymentDAO {
         return false;
     }
 
+    public int countPaymentsToday() {
+        return getIntValue("SELECT COUNT(*) FROM payments WHERE payment_date = CURDATE()");
+    }
+
+    public int countPaymentsByMethodToday(String method) {
+        String sql = "SELECT COUNT(*) FROM payments WHERE payment_date = CURDATE() AND payment_method = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, method);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[PaymentDAO.countPaymentsByMethodToday] Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public double getTotalRevenueToday() {
+        return getDoubleValue("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payment_date = CURDATE()");
+    }
+
     // 6. READ — fetch the total_amount of an order (to pre-fill form)
 
     /**
@@ -260,4 +304,39 @@ public class PaymentDAO {
         }
         return p;
     }
+
+    private int getIntValue(String sql) {
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("[PaymentDAO.getIntValue] Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private double getDoubleValue(String sql) {
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("[PaymentDAO.getDoubleValue] Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+
+    private int sanitizeLimit(int limit) {
+        return Math.max(1, Math.min(limit, 20));
+    }
 }
+

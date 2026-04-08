@@ -1,5 +1,3 @@
-// Member C (Orders & Queue Management) should implement this file
-
 package model;
 
 public class MenuItem {

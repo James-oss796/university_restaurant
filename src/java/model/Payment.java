@@ -1,6 +1,3 @@
-// Member D (Payments & Notifications) - Payment.java
-
-
 package model;
 
 import java.math.BigDecimal;

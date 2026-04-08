@@ -1,6 +1,3 @@
-// Member D (Notifications) - Notification.java
-
-
 package model;
 
 /**

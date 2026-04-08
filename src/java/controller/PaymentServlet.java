@@ -1,13 +1,3 @@
-// Member D (Payments & Notifications) - PaymentServlet.java
-// Controller servlet that handles all payment-related HTTP requests.
-//
-// GET  /PaymentServlet          → show payment form (cashier view, optionally pre-filled with orderId)
-// POST /PaymentServlet          → process payment form submission
-// POST /PaymentServlet?action=history → cashier views payment history (all payments)
-//
-// Role requirement: Only users with role="cashier" may access this servlet.
-// Students and admins are redirected to the login page.
-
 package controller;
 
 import jakarta.servlet.ServletException;
@@ -25,6 +15,7 @@ import model.User;
 import model.dao.NotificationDAO;
 import model.dao.OrderDAO;
 import model.dao.PaymentDAO;
+import model.dao.QueueDAO;
 
 /**
  * PaymentServlet — handles payment processing for cashiers.
@@ -54,6 +45,23 @@ public class PaymentServlet extends HttpServlet {
         User user = getSessionUser(req);
         if (!isCashier(user)) {
             resp.sendRedirect(req.getContextPath() + "/LoginServlet");
+            return;
+        }
+
+        HttpSession session = req.getSession(false);
+        if (session != null) {
+            Object successMessage = session.getAttribute("paymentSuccess");
+            if (successMessage != null) {
+                req.setAttribute("paymentSuccess", successMessage);
+                session.removeAttribute("paymentSuccess");
+            }
+        }
+
+        loadCashierDashboardData(req);
+
+        String action = getValue(req.getParameter("action"));
+        if ("history".equals(action)) {
+            showPaymentHistory(req, resp);
             return;
         }
 
@@ -110,10 +118,12 @@ public class PaymentServlet extends HttpServlet {
         String amountStr    = getValue(req.getParameter("amount"));
         String method       = getValue(req.getParameter("paymentMethod"));
         String reference    = getValue(req.getParameter("transactionReference"));
+        populateFormState(req, orderIdStr, amountStr, method, reference);
 
         // Validate: orderId is required
         if (orderIdStr.isEmpty()) {
             req.setAttribute("error", "Order ID is required.");
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
@@ -124,6 +134,7 @@ public class PaymentServlet extends HttpServlet {
             if (orderId <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
             req.setAttribute("error", "Order ID must be a positive integer.");
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
@@ -131,7 +142,7 @@ public class PaymentServlet extends HttpServlet {
         // Validate: amount is required and must be a positive number
         if (amountStr.isEmpty()) {
             req.setAttribute("error", "Amount is required.");
-            req.setAttribute("prefilledOrderId", orderId);
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
@@ -142,7 +153,7 @@ public class PaymentServlet extends HttpServlet {
             if (amount <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
             req.setAttribute("error", "Amount must be a positive number.");
-            req.setAttribute("prefilledOrderId", orderId);
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
@@ -150,7 +161,7 @@ public class PaymentServlet extends HttpServlet {
         // Validate: payment method must be "cash" or "mobile_money"
         if (!Payment.METHOD_CASH.equals(method) && !Payment.METHOD_MOBILE_MONEY.equals(method)) {
             req.setAttribute("error", "Please select a valid payment method.");
-            req.setAttribute("prefilledOrderId", orderId);
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
@@ -159,19 +170,36 @@ public class PaymentServlet extends HttpServlet {
         if (Payment.METHOD_MOBILE_MONEY.equals(method) && reference.isEmpty()) {
             req.setAttribute("error",
                 "A transaction reference is required for Mobile Money payments.");
-            req.setAttribute("prefilledOrderId", orderId);
-            req.setAttribute("prefilledAmount", amountStr);
-            req.setAttribute("selectedMethod", method);
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
 
         // 4. Prevent duplicate payments
         PaymentDAO paymentDAO = new PaymentDAO();
+        double amountDue = paymentDAO.getOrderAmountDue(orderId);
+        if (amountDue <= 0) {
+            req.setAttribute("error", "Order #" + orderId + " was not found.");
+            loadCashierDashboardData(req);
+            req.getRequestDispatcher("payment.jsp").forward(req, resp);
+            return;
+        }
+
         if (paymentDAO.isOrderPaid(orderId)) {
             req.setAttribute("error",
                 "Order #" + orderId + " has already been paid. "
               + "Please verify the order number.");
+            loadCashierDashboardData(req);
+            req.getRequestDispatcher("payment.jsp").forward(req, resp);
+            return;
+        }
+
+        if (Math.abs(amount - amountDue) > 0.009d) {
+            req.setAttribute("error",
+                "Amount must match the order total. Order #" + orderId
+              + " is due KES " + String.format("%.2f", amountDue) + ".");
+            req.setAttribute("prefilledAmount", String.format("%.2f", amountDue));
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
@@ -183,19 +211,19 @@ public class PaymentServlet extends HttpServlet {
         if (generatedId == -1) {
             req.setAttribute("error",
                 "Payment could not be saved. Please try again.");
-            req.setAttribute("prefilledOrderId", orderId);
-            req.setAttribute("prefilledAmount", amountStr);
-            req.setAttribute("selectedMethod", method);
+            loadCashierDashboardData(req);
             req.getRequestDispatcher("payment.jsp").forward(req, resp);
             return;
         }
 
+        OrderDAO orderDAO = new OrderDAO();
+        orderDAO.updateOrderStatus(orderId, "preparing");
+
         // 6. Trigger a notification for the student
         //    We need the student's user_id from the orders table.
-        //    OrderDAO.getCustomerIdByOrder() is suggested as an addition to Member C's DAO.
+        //    OrderDAO.getCustomerIdByOrder() supports notification delivery after payment.
         //    If that method is not yet available we use a safe fallback (no notification).
         try {
-            OrderDAO orderDAO = new OrderDAO();
             int studentId = orderDAO.getCustomerIdByOrder(orderId);
             if (studentId > 0) {
                 NotificationDAO notifDAO = new NotificationDAO();
@@ -216,7 +244,7 @@ public class PaymentServlet extends HttpServlet {
           + " for Order #" + orderId + " was processed successfully. "
           + "Payment ID: #" + generatedId);
 
-        resp.sendRedirect(req.getContextPath() + "/payment.jsp");
+        resp.sendRedirect(req.getContextPath() + "/PaymentServlet");
     }
 
     // Private helper — show payment history (used by cashier dashboard)
@@ -228,6 +256,7 @@ public class PaymentServlet extends HttpServlet {
         PaymentDAO dao = new PaymentDAO();
         List<Payment> allPayments = dao.getAllPayments();
         req.setAttribute("paymentHistory", allPayments);
+        loadCashierDashboardData(req);
         req.getRequestDispatcher("payment.jsp").forward(req, resp);
     }
 
@@ -249,5 +278,32 @@ public class PaymentServlet extends HttpServlet {
     /** Trims a parameter value, returning empty string if null. */
     private String getValue(String param) {
         return param == null ? "" : param.trim();
+    }
+
+    private void populateFormState(HttpServletRequest req, String orderId, String amount,
+                                   String method, String reference) {
+        req.setAttribute("prefilledOrderId", orderId);
+        req.setAttribute("prefilledAmount", amount);
+        req.setAttribute("selectedMethod", method);
+        req.setAttribute("transactionReference", reference);
+    }
+
+    private void loadCashierDashboardData(HttpServletRequest req) {
+        PaymentDAO paymentDAO = new PaymentDAO();
+        QueueDAO queueDAO = new QueueDAO();
+
+        int paymentsToday = paymentDAO.countPaymentsToday();
+        double revenueToday = paymentDAO.getTotalRevenueToday();
+
+        req.setAttribute("paymentsToday", paymentsToday);
+        req.setAttribute("revenueToday", revenueToday);
+        req.setAttribute("cashPaymentsToday", paymentDAO.countPaymentsByMethodToday(Payment.METHOD_CASH));
+        req.setAttribute("mobilePaymentsToday", paymentDAO.countPaymentsByMethodToday(Payment.METHOD_MOBILE_MONEY));
+        req.setAttribute("averageTicketToday", paymentsToday == 0 ? 0.0 : revenueToday / paymentsToday);
+        req.setAttribute("activeQueueCount", queueDAO.getActiveQueueCount());
+        req.setAttribute("averageQueueWait", queueDAO.getAverageActiveWaitMinutes());
+        req.setAttribute("nextQueueNumber", queueDAO.getNextQueueNumberPreview());
+        req.setAttribute("queueOverview", queueDAO.getActiveQueueOverview(6));
+        req.setAttribute("recentPayments", paymentDAO.getRecentPayments(5));
     }
 }

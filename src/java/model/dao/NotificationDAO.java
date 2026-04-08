@@ -1,7 +1,3 @@
-// Member D (Payments & Notifications) - NotificationDAO.java
-// Data Access Object for the `notifications` table.
-// All DB interaction for notifications is handled here — NO SQL in Servlets or JSPs.
-
 package model.dao;
 
 import model.Notification;
@@ -220,7 +216,7 @@ public class NotificationDAO {
 
     /**
      * Creates and inserts an order status update notification.
-     * Intended to be called by Member C's QueueServlet or an admin action
+     * Intended to be called by QueueServlet or an admin action
      * when the order status changes (pending → preparing → ready → served).
      *
      * @param customerId  The student to notify.
@@ -243,7 +239,7 @@ public class NotificationDAO {
 
     /**
      * Creates and inserts a queue update notification.
-     * Intended to be called by Member C's QueueServlet when a queue
+     * Intended to be called by QueueServlet when a queue
      * number is assigned or position changes.
      *
      * @param customerId   The student to notify.
@@ -276,3 +272,4 @@ public class NotificationDAO {
         return n;
     }
 }
+

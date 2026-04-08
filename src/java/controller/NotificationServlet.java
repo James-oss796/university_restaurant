@@ -1,12 +1,3 @@
-// Member D (Payments & Notifications) - NotificationServlet.java
-// Controller servlet for student notification interactions.
-//
-// GET  /NotificationServlet             → load and display notifications for the logged-in student
-// POST /NotificationServlet?action=markRead&id=X   → mark one notification as read
-// POST /NotificationServlet?action=markAllRead      → mark all notifications as read
-//
-// Role requirement: Only students may access this servlet.
-
 package controller;
 
 import jakarta.servlet.ServletException;

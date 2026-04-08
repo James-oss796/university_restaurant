@@ -1,5 +1,3 @@
-// Member E (Reports & Admin Dashboard) should implement this file
-
 package model.dao;
 import model.DailyReport;
 import java.sql.*;

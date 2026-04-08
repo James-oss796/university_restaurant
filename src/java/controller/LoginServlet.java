@@ -12,6 +12,8 @@ import model.dao.UserDAO;
 
 public class LoginServlet extends HttpServlet {
 
+    private static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -47,8 +49,21 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
+        if (!email.matches(EMAIL_PATTERN)) {
+            req.setAttribute("error", "Enter a valid email address that includes @.");
+            req.getRequestDispatcher("login.jsp").forward(req, resp);
+            return;
+        }
+
         UserDAO dao = new UserDAO();
         User user = dao.findByEmail(email);
+
+        if (dao.hasError()) {
+            log("Login lookup failed: " + dao.getLastErrorMessage());
+            req.setAttribute("error", "Login is temporarily unavailable. Please try again.");
+            req.getRequestDispatcher("login.jsp").forward(req, resp);
+            return;
+        }
 
         if (user == null || !PasswordUtil.matches(password, user.getPasswordHash())) {
             req.setAttribute("error", "Invalid email or password.");
@@ -80,15 +95,15 @@ public class LoginServlet extends HttpServlet {
         String contextPath = req.getContextPath();
 
         if ("student".equals(user.getRole())) {
-            resp.sendRedirect(contextPath + "/menu.jsp");
+            resp.sendRedirect(contextPath + "/MenuServlet");
             return;
         }
         if ("cashier".equals(user.getRole())) {
-            resp.sendRedirect(contextPath + "/payment.jsp");
+            resp.sendRedirect(contextPath + "/PaymentServlet");
             return;
         }
         if ("admin".equals(user.getRole())) {
-            resp.sendRedirect(contextPath + "/report.jsp");
+            resp.sendRedirect(contextPath + "/AdminServlet");
             return;
         }
 

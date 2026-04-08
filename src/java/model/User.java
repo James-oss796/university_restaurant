@@ -1,5 +1,3 @@
-// Member B (Authentication & User Management) should implement this file
-
 package model;
 
 public class User {
@@ -11,6 +9,7 @@ public class User {
     private String passwordHash;
     private String role;
     private boolean isActive;
+    private String createdAt;
 
     // Getters and Setters
     public int getUserId() { return userId; }
@@ -36,4 +35,7 @@ public class User {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 }
